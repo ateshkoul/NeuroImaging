@@ -1,6 +1,7 @@
 function aal = tbx_cfg_aal
-% Configuration file for toolbox 'AAL'
+% Configuration file for toolbox batch 'AAL'
 % Written by Atesh Koul, National Brain Research Center, India
+% code in part from spm batch scripts
 
 % ---------------------------------------------------------------------
 % spmmat Select SPM.mat
