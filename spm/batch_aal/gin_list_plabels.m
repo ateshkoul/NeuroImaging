@@ -630,7 +630,7 @@ end				% end region
 % for printing the results in batch mode
 if spm_figure('#page',Fgraph)==1
 if exist('pr')
-    if pr == 1
+    if pr == 3 || pr ==4
     spm_figure('Print');
     end
 end
@@ -647,7 +647,7 @@ if spm_figure('#page',Fgraph)>1
     
     % for printing the results in batch mode
     if exist('pr')
-        if pr == 1
+        if pr == 3 || pr == 4
             spm_figure('Print');
         end
     end

@@ -149,11 +149,27 @@ units.val     = { 1 };
 pr         = cfg_menu;
 pr.tag     = 'pr';
 pr.name    = 'Print results';
-pr.help    = {''};
-pr.labels  = {'Yes',...               
-               'No'}';
-pr.values  = { 1 0 };
-pr.val     = { 1 };
+pr.help    = {'Choose what to print. '
+               'No does not print anything'
+               'Only Co-or : prints co-ordinates with glass brain'
+               'Only Areas : prints aal labelled areas only'
+               'Both prints both co-ordinates and areas'};
+pr.labels  = {'No',...        
+              'Only co-or',...
+              'Only Areas',...
+              'Both co-or and Areas'}';
+pr.values  = { 1 2 3 4 };
+pr.val     = {4};
+
+
+name         = cfg_entry;
+name.tag     = 'name';
+name.name    = 'Name of file';
+name.help    = {'Enter the name of result file to be printed.'
+                'Co-ordinate file with be prefixed with Co-or and then name'};
+name.val     = {''};
+name.strtype = 's';
+name.num     = [0 Inf];
 
 % ---------------------------------------------------------------------
 % Select a labelled Atlas
@@ -162,7 +178,7 @@ pr.val     = { 1 };
 atl         = cfg_files;
 atl.tag     = 'atl';
 atl.name    = 'Atlas';
-atl.help    = {'Select a labelled atlas.'};
+atl.help    = {'Select an aal labelled atlas.'};
 atl.filter  = 'image';
 atl.ufilter = '.*';
 atl.num     = [1 1];
@@ -205,7 +221,7 @@ extn.val     = {0};
 aal         = cfg_exbranch;
 aal.tag     = 'aal';
 aal.name    = 'AAL';
-aal.val     = {spmmat generic units pr atl option extn};
+aal.val     = {spmmat generic units pr name atl option extn};
 aal.help    = {'AUTOMATED ANATOMICAL LABELING toolbox:Reference Automated Anatomical Labeling of Activations in SPM Using a Macroscopic Anatomical Parcellation',... 
                 'of the MNI MRI Single-Subject Brain.',...
                 'N. Tzourio-Mazoyer, B. Landeau, D. Papathanassiou, F. Crivello, O. Etard, N. Delcroix, B. Mazoyer, and M. Joliot. NeuroImage 2002.'};

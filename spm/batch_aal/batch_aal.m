@@ -17,6 +17,9 @@ atlas = job.atl;
 ext = job.extn;
 % Whether to print or not
 pr = job.pr;
+% Name of the print file
+name = job.name;
+
 for k = 1:numel(cspec)
     job.conspec=cspec(k);
     if (numel(cspec(k).contrasts) == 1) && isinf(cspec(k).contrasts)
@@ -59,8 +62,8 @@ for k = 1:numel(cspec)
         end
         [hReg xSPM SPM] = spm_results_ui('Setup',xSPM); 
         TabDat = spm_list('List',xSPM,hReg);
-        if pr==1
-            spm_figure('Print','Graphics','Co-or.ps');
+        if pr==2 || pr ==4
+            spm_figure('Print','Graphics',['Co-or -' name]);
         end        
         assignin('base','TabDat',TabDat);
         assignin('base', 'hReg', hReg);
