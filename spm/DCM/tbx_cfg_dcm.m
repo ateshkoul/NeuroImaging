@@ -1,6 +1,8 @@
 function dcm = tbx_cfg_dcm
-% Configuration file for toolbox 'AAL'
+% Configuration file for DCM toolbox
 % Written by Atesh Koul, National Brain Research Center, India
+
+%%
 
 % ---------------------------------------------------------------------
 % spmmat Select SPM.mat
@@ -12,99 +14,159 @@ spmmat.help    = {'Select the SPM.mat file that contains the design specificatio
 spmmat.filter  = 'mat';
 spmmat.ufilter = '^SPM\.mat$';
 spmmat.num     = [1 1];
-% ---------------------------------------------------------------------
-% ROI
-% ---------------------------------------------------------------------
+
 
 name        = cfg_entry;
 name.tag     = 'name';
 name.name    = 'Name of DCM';
-name.help    = {'Name of the DCM file'};
+name.help    = {'Name of the DCM file to be appended. It will appear as DCM_name_'};
 name.val     = {''};
 name.strtype = 's';
 name.num     = [1 Inf];
 
 
-roi        = cfg_files;
-roi.tag     = 'roi';
-roi.name    = 'ROIs';
-roi.help    = {'Select the Region of interest .mat file'};
-roi.filter  = 'mat';
-roi.ufilter = '^VOI.*\.mat$';
-roi.num     = [1 1];
-
-d         = cfg_entry;
-d.tag     = 'd';
-d.name    = 'Non-linear effects';
-d.help    = {'Non-linear effects'};
-d.val     = {[0 0 0;0 0 0;0 0 0]};
-d.strtype = 'e';
-d.num     = [3 3];
-
-
-rois         = cfg_branch;
-rois.tag     = 'rois';
-rois.name    = 'ROIs';
-rois.val     = {roi d};
-rois.help    = {
-                  'Specify various timing parameters needed to construct the design matrix. This includes the units of the design specification and the interscan interval.'
-                  ''
-                  'Also, with longs TRs you may want to shift the regressors so that they are aligned to a particular slice.  This is effected by changing the microtime resolution and onset. '
-}';
-
-reproi         =  cfg_repeat;
-reproi.tag     = 'reproi';
-reproi.name    = 'ROIs';
-reproi.help    = {'.'};
-reproi.values  = {rois};
-reproi.num     = [1 8];
+savedcm         = cfg_files;
+savedcm.tag     = 'savedcm';
+savedcm.name    = 'Directory to save models';
+savedcm.help    = {'Select directory to save created models'};
+savedcm.filter  = 'dir';
+savedcm.ufilter ='.*';
+savedcm.num     = [1 Inf];
 
 % ---------------------------------------------------------------------
-% Directory for the ROI
+% VOI
 % ---------------------------------------------------------------------
+voi        = cfg_files;
+voi.tag     = 'voi';
+voi.name    = 'VOI';
+voi.help    = {'Select the Volume of interest .mat file'};
+voi.filter  = 'mat';
+voi.ufilter = '^VOI.*\.mat$';
+voi.num     = [1 1];
 
-a         = cfg_entry;
-a.tag     = 'a';
-a.name    = 'Intrinsic connectivity';
-a.help    = {'Intrinsic connectivity'};
-a.val     = {''};
-a.strtype = 'e';
-a.num     = [Inf Inf];
-
-b        = cfg_entry;
-b.tag     = 'b';
-b.name    = 'Effect of condition';
-b.help    = {'Effect of condition'};
-b.val     = {''};
-b.strtype = 'e';
-b.num     = [Inf Inf];
-
-c         = cfg_entry;
-c.tag     = 'c';
-c.name    = 'Direct Effect';
-c.help    = {'Direct Effect'};
-c.val     = {''};
-c.strtype = 'e';
-c.num     = [1 Inf];
+%--------------------------------------------------
+% Non-linear effects
+%--------------------------------------------------
+%d         = cfg_entry;
+%d.tag     = 'd';
+%d.name    = 'Non-linear effects';
+%d.help    = {'Non-linear effects'};
+%d.val     = {[0 0 0;0 0 0;0 0 0]};
+%d.strtype = 'e';
+%d.num     = [3 3];
 
 
-effects         = cfg_branch;
-effects.tag     = 'effects';
-effects.name    = 'Conditions';
-effects.val     = {b c};
-effects.help    = {
-                  'Specify various timing parameters needed to construct the design matrix. This includes the units of the design specification and the interscan interval.'
-                  ''
-                  'Also, with longs TRs you may want to shift the regressors so that they are aligned to a particular slice.  This is effected by changing the microtime resolution and onset. '
-}';
+vois         = cfg_branch;
+vois.tag     = 'vois';
+vois.name    = 'VOIs';
+vois.val     = {voi};
+vois.help    = {'Select the VOIs'};
 
-generic         =  cfg_repeat;
-generic.tag     = 'generic';
-generic.name    = 'Conditions';
-generic.help    = {'.'};
-generic.values  = {effects };
-generic.num     = [1 Inf];
+repvoi         =  cfg_repeat;
+repvoi.tag     = 'repvoi';
+repvoi.name    = 'VOIs';
+repvoi.help    = {'Select the VOIs'};
+repvoi.values  = {vois};
+repvoi.num     = [1 8];
 
+%--------------------------------------------------
+% Matrix selection
+%--------------------------------------------------
+
+matrix         = cfg_files;
+matrix.tag     = 'matrix';
+matrix.name    = 'Select matrix';
+matrix.help    = {'Select the matrix file that contains the design specification.'
+                   'It should contain values of intrinsic, modulatory and input matrices in 1 DCM struct as DCM.a, DCM.b, DCM.c, DCM.d (a b c and d parameters)'};
+matrix.filter  = 'mat';
+matrix.ufilter = '.*';
+matrix.num     = [1 1];
+
+%% Model Construction
+%
+% Select name of destination folder
+%
+dest         = cfg_files;
+dest.tag     = 'dest';
+dest.name    = 'Directory';
+dest.help    = {'Select a destination directory where models will be saved.'};
+dest.filter = 'dir';
+dest.ufilter = '.*';
+dest.num     = [1 1];
+%
+% Number of ROIs
+%
+%nROIs         = cfg_entry;
+%nROIs.tag     = 'nROIs';
+%nROIs.name    = 'no. of ROIs';
+%nROIs.help    = {'No. of conditions'};
+%nROIs.val     = {};
+%nROIs.strtype = 'n';
+%nROIs.num     = [1 1];
+
+
+save         = cfg_menu;
+save.tag     = 'save';
+save.name    = 'Save generated Models';
+save.help    = {'Choose whether to save generated models or not'
+                 'Only model parameters a b c will be saved'};
+save.labels  = {'Yes',...        
+               'No'}';
+save.values  = { 1 0};
+save.val     = {1};
+
+intmatrix         = cfg_entry;
+intmatrix.tag     = 'intmatrix';
+intmatrix.name    = 'Select general intrinsic matrix';
+intmatrix.help    = {'Select the generalised intrinsic matrix that contains the design specification. This has to be in the form nxn where n is the number of VOIs.' 
+                      'The sequence of VOIs has to be in the order starting from input to final region'};
+intmatrix.val     = {};
+intmatrix.strtype = 'e';
+intmatrix.num     = [Inf Inf];
+
+
+modmatrix         = cfg_entry;
+modmatrix.tag     = 'modmatrix';
+modmatrix.name    = 'Select general modulatory matrix';
+modmatrix.help    = {'Select the generalised modulatory matrix that contains the design specification.'
+                    'The matrix has to correspond to the generalised intrinsic matrix'};
+modmatrix.val     = {};
+modmatrix.strtype = 'e';
+modmatrix.num     = [Inf Inf];
+
+inpmatrix         = cfg_entry;
+inpmatrix.tag     = 'inpmatrix';
+inpmatrix.name    = 'Select general input matrix';
+inpmatrix.help    = {'Select the generalised input matrix that contains the design specification.'
+                     'The matrix has to be in the form nxc where n is number of VOIs and c is number of conditions.'
+                     'The conditions have to coorespond to that in the selected SPM mat file'};
+inpmatrix.val     = {};
+inpmatrix.strtype = 'e';
+inpmatrix.num     = [Inf Inf];
+
+modcreate        = cfg_exbranch;
+modcreate.tag     = 'modcreate';
+modcreate.name    = 'Create Models';
+modcreate.val     = {dest save intmatrix modmatrix inpmatrix};
+modcreate.help    = {'This options creats all combinations of possible models given a generalised matrix of possible connections'};
+%%
+
+model         = cfg_choice;
+model.tag     = 'model';
+model.name    = 'Model Specification';
+model.val     = {};
+model.help    = {'Select whether to create models or select a model matrix'};
+model.values  = {modcreate matrix};
+
+cond         = cfg_entry;
+cond.tag     = 'cond';
+cond.name    = 'No. of conditions';
+cond.help    = {'No. of conditions'};
+cond.val     = {2};
+cond.strtype = 'n';
+cond.num     = [1 1];
+
+%% Model Options
 delays         = cfg_entry;
 delays.tag     = 'delays';
 delays.name    = 'slice timings';
@@ -112,7 +174,8 @@ delays.help    = {'Specify slice timings 1 for default value'};
 delays.strtype = 'n';
 delays.val     = {1};
 delays.num     = [1  1];
-% 
+
+% Echo time
 
 te         = cfg_entry;
 te.tag     = 'te';
@@ -122,7 +185,7 @@ te.strtype = 'n';
 te.val     = {3};
 te.num     = [1  1];
 
-% 
+% bilinear or non-linear
 lin         = cfg_menu;
 lin.tag     = 'lin';
 lin.name    = 'Linearity';
@@ -132,7 +195,7 @@ lin.values  = {0 1};
 lin.val     = {0};
 
 
-% 
+% States per region
 state         = cfg_menu;
 state.tag     = 'state';
 state.name    = 'States per region';
@@ -141,14 +204,16 @@ state.labels  =  {'one' 'two'};
 state.values  = {0 1};
 state.val     = {0};
 
+% Stochastic 
 sto        = cfg_menu;
 sto.tag     = 'sto';
-sto.name    = 'Stocastic';
-sto.help    = {'Specify stocastic'};
+sto.name    = 'Stochastic';
+sto.help    = {'Specify stochastic'};
 sto.labels  =  {'No' 'Yes'};
 sto.values  = {0 1};
 sto.val     = {0};
 
+% Specify center
 cen         = cfg_menu;
 cen.tag     = 'cen';
 cen.name    = 'center';
@@ -161,11 +226,9 @@ options        = cfg_branch;
 options.tag     = 'options';
 options.name    = 'Model options';
 options.val     = {delays te lin state sto cen};
-options.help    = {
-                  'Specify various timing parameters needed to construct the design matrix. This includes the units of the design specification and the interscan interval.'
-                  ''
-                  'Also, with longs TRs you may want to shift the regressors so that they are aligned to a particular slice.  This is effected by changing the microtime resolution and onset. '
-}';
+options.help    = {'Select DCM options'};
+
+%%
 
 % ---------------------------------------------------------------------
 % titlestr
@@ -181,50 +244,41 @@ titlestr.num     = [0 Inf];
 specify         = cfg_exbranch;
 specify.tag     = 'specify';
 specify.name    = 'DCM specify';
-specify.val     = {spmmat name reproi a generic options};
-specify.help    = {' 2002.'};
+specify.val     = {spmmat name savedcm repvoi model cond options};
+specify.help    = {'Batch specify and create DCM models'};
 specify.prog    = @batch_dcm;
-% specify.vout    = @vout_specify;
-% have to make the dependency thing to work
+
+
+%% Batch DCM Estimate
+%
+% Estimating DCM models in batch mode
+%
 
 % ---------------------------------------------------------------------
-% data Session
+% Select DCM files
 % ---------------------------------------------------------------------
 data         = cfg_files;
 data.tag     = 'data';
-data.name    = 'Session';
-data.help    = {'Select scans for this session. In the coregistration step, the sessions are first realigned to each other, by aligning the first scan from each session to the first scan of the first session.  Then the images within each session are aligned to the first image of the session. The parameter estimation is performed this way because it is assumed (rightly or not) that there may be systematic differences in the images between sessions.'};
+data.name    = 'DCM files';
+data.help    = {'Select DCM files to estimate'};
 data.filter = 'mat';
 data.ufilter = '.mat';
-data.num     = [1 1];
+data.num     = [1 Inf];
 
 % ---------------------------------------------------------------------
-% estwrite Realign: Estimate & Reslice
+% Estimate
 % ---------------------------------------------------------------------
 est        = cfg_exbranch;
 est.tag     = 'est';
 est.name    = 'Estimate';
 est.val     = {data };
-est.help    = {
-                    'This routine realigns a time-series of images acquired from the same subject using a least squares approach and a 6 parameter (rigid body) spatial transformation/* \cite{friston95a}*/.  The first image in the list specified by the user is used as a reference to which all subsequent scans are realigned. The reference scan does not have to be the first chronologically and it may be wise to chose a "representative scan" in this role.'
-                    ''
-                    'The aim is primarily to remove movement artefact in fMRI and PET time-series (or more generally longitudinal studies) /* \cite{ashburner97bir}*/. The headers are modified for each of the input images, such that. they reflect the relative orientations of the data. The details of the transformation are displayed in the results window as plots of translation and rotation. A set of realignment parameters are saved for each session, named rp_*.txt. After realignment, the images are resliced such that they match the first image selected voxel-for-voxel. The resliced images are named the same as the originals, except that they are prefixed by ''r''.'
-}';
+est.help    = {'Batch Estimate DCM models'};
 est.prog = @batch_dcm_estimate;
 % the program batch_dcm_estimate has to be in the path for this to work
 
+%%
 dcm         = cfg_choice;
 dcm.tag     = 'dcm';
 dcm.name    = 'DCM';
-dcm.help    = {' 2002.'};
+dcm.help    = {'Generate and Estimate DCM models in batch'};
 dcm.values     = {specify est};
-
-
-% %======================================================================
-% function dep = vout_specify(job)
-%     dep(1)            = cfg_dep;
-%     dep(1).sname      = sprintf('new');
-%     dep(1).tgt_spec   = cfg_findspec({{'filter','mat','strtype','e'}});
-%     
-
-

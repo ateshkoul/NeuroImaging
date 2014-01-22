@@ -1,4 +1,4 @@
-function DCM = spm_dcm_specify_batch(varargin)
+function DCM = spm_dcm_specify_batch(specify)
 % Specify inputs of a DCM
 % FORMAT [DCM] = spm_dcm_specify
 %
@@ -9,53 +9,60 @@ function DCM = spm_dcm_specify_batch(varargin)
 % Karl Friston
 % $Id: spm_dcm_specify.m 4185 2011-02-01 18:46:18Z guillaume $
 
-if nargin == 14
-    spmmatfile = varargin{1}
-    name = varargin{2}
-    voi = varargin{3}
-    a = varargin{4}
-    b = varargin{5}
-    c = varargin{6}
-    d = varargin{7}
-    RT = varargin{8}
-    TEu = varargin{9}
-    nonlin  = varargin{10}
-    two_st  = varargin{11}
-    sto  = varargin{12}
-    cen     = varargin{13}
-    ncond = varargin{14}
-end
+% Modified for Batch input
+% Atesh Koul, National Brain Research Centre, India
 
 
+%% Get variables
     
+    % spm mat file location
+    spmmatfile = specify.spmmat;
+    % DCM name to be appended
+    name = specify.name;
+    % VOI location
+    voi = specify.voi;
+    % Matrix a
+    a = specify.matrix.a;
+    % Matrix b
+    b = specify.matrix.b;
+    % Matrix c
+    c = specify.matrix.c;
+    % Matrix d
+    d = specify.matrix.d;
+    % RT
+    RT = specify.options.delays;
+    % TE
+    TEu = specify.options.te;
+    % DCM options
+    nonlin = specify.options.lin;
+    two_st = specify.options.state;
+    sto = specify.options.sto;
+    cen = specify.options.cen;
+    ncond = specify.cond;
+    if isfield(specify,'model')
+            model_number = specify.model;
+    end
+       
+%%
 
-%-Interactive window
-%--------------------------------------------------------------------------
-% Finter = spm_figure('GetWin','Interactive');
-% bcolor = get(Finter,'color');
-% WS     = spm('WinScale');
-% dx     = 20;
-
-%spm_input('Specify DCM:...  ',1,'d');
 
 %==========================================================================
 % Get design and directory
 %==========================================================================
 if exist('spmmatfile')
     sts = 1;
-    spmmatfile = char(spmmatfile)
+    spmmatfile = char(spmmatfile);
 else
 [spmmatfile, sts] = spm_select(1,'^SPM\.mat$','Select SPM.mat');
 end
 
 if ~sts, DCM = []; return; end
-swd = spm_str_manip(spmmatfile,'H')
+swd = spm_str_manip(spmmatfile,'H');
 try
     load(fullfile(swd,'SPM.mat'))
 catch
     error(['Cannot read ' fullfile(swd,'SPM.mat')]);
 end
-
 
 %==========================================================================
 % Name
@@ -63,7 +70,6 @@ end
 if ~exist('name')
     name  = spm_input('name for DCM_???.mat','+1','s');
 end
-
 
 %==========================================================================
 % Outputs
@@ -74,14 +80,13 @@ end
 if ~exist('VOI')
     P = voi;
 else
-P     = cellstr(spm_select([1 8],'^VOI.*\.mat$',{'select VOIs'},'',swd))
+P = cellstr(spm_select([1 8],'^VOI.*\.mat$',{'select VOIs'},'',swd));
 end
-m     = numel(P);
+m = numel(P);
 for i = 1:m
-    p     = load(P{i},'xY')
-    xY(i) = p.xY
+    p = load(P{i},'xY');
+    xY(i) = p.xY;
 end
-
 
 %==========================================================================
 % Inputs
@@ -90,7 +95,7 @@ end
 %-Get (nc) 'causes' or inputs U
 %--------------------------------------------------------------------------
 % spm_input('Input specification:...  ',1,'d');
-Sess   = SPM.Sess(xY(1).Sess)
+Sess = SPM.Sess(xY(1).Sess);
 if isempty(Sess.U)
     % spontaneous activity, i.e. no stimuli
     nc = 0;
@@ -100,12 +105,12 @@ else
     U.dt   = Sess.U(1).dt;
     u      = length(Sess.U);
     U.name = {};
-    U.u    = [];
+    U.u    = [];    
     for  i = 1:ncond
         for j = 1:length(Sess.U(i).name)
 %             
-                U.u             = [U.u Sess.U(i).u(33:end,j)]
-                U.name{end + 1} = Sess.U(i).name{j}
+                U.u = [U.u Sess.U(i).u(33:end,j)];
+                U.name{end + 1} = Sess.U(i).name{j};
 %             str = ['include ' Sess.U(i).name{j} '?'];
 %             if spm_input(str,'+1','y/n',[1 0],1)
 %                 U.u             = [U.u Sess.U(i).u(33:end,j)];
@@ -114,7 +119,7 @@ else
 %             end
         end
     end
-    nc     = size(U.u,2)
+    nc     = size(U.u,2);
 end
 
 %==========================================================================
@@ -135,6 +140,7 @@ end
 delays = delays';
 %-Echo time (TE) of data acquisition
 %--------------------------------------------------------------------------
+TEu = TEu/100;
 TE    = 0.04;
 TE_ok = 0;
 while ~TE_ok
@@ -152,25 +158,15 @@ while ~TE_ok
     end
 end
 
-
 %==========================================================================
 % Model options
 %==========================================================================
 if nc                                                     % there are inputs
-    options.nonlinear  = nonlin
-    options.two_state  = two_st
-    options.stochastic = sto
-    options.centre     = cen
-
-% elseif
-%         spm_input('Model options:...  ',-1,'d'); 
-%         options.nonlinear  = spm_input('modulatory effects','+1','b',{'bilinear','nonlinear'},[0 1],1)
-%         options.two_state  = spm_input('states per region', '+1','b',{'one','two'},[0 1],1)
-%         options.stochastic = spm_input('stochastic effects','+1','b',{'no','yes'},[0 1],1)
-%         options.centre     = spm_input('centre input',      '+1','b',{'no','yes'},[0 1],1)
-% end
-
- options.endogenous = 0;  
+    options.nonlinear  = nonlin;
+    options.two_state  = two_st;
+    options.stochastic = sto;
+    options.centre     = cen;
+    options.endogenous = 0;  
 else 
             options.nonlinear  = 0;
             options.two_state  = 0;
@@ -179,187 +175,14 @@ else
             options.endogenous = 1;
 end
 
-
 %==========================================================================
 % Graph connections
 %==========================================================================
-% a     = zeros(m,m);
 if options.endogenous
     b     = zeros(m,m,1);
     c     = zeros(m,1);
-% else
-%     b     = zeros(m,m,nc);
-%     c     = zeros(m,nc);
 end
-% d     = zeros(m,m,0);
-% 
-% % %-Intrinsic connections (A matrix)
-% % %==========================================================================
-% % 
-% % %-Buttons and labels
-% % %--------------------------------------------------------------------------
-% % spm_input('Specify intrinsic connections from',1,'d')
-% % spm_input('to',3,'d')
-% % for i = 1:m
-% %     str    = sprintf('%s %i',xY(i).name,i);
-% %     h1(i)  = uicontrol(Finter,'String',str,...
-% %         'Style','text',...
-% %         'FontSize',10,...
-% %         'BackgroundColor',bcolor,...
-% %         'HorizontalAlignment','right',...
-% %         'Position',[080 350-dx*i 080 020].*WS);
-% %     h2(i)  = uicontrol(Finter,'String',sprintf('%i',i),...
-% %         'Style','text',...
-% %         'FontSize',10,...
-% %         'BackgroundColor',bcolor,...
-% %         'Position',[180+dx*i 350 010 020].*WS);
-% % end
-% % for i = 1:m
-% %     for j = 1:m
-% %         h3(i,j) = uicontrol(Finter,...
-% %             'Position',[180+dx*j 350-dx*i 020 020].*WS,...
-% %             'BackgroundColor',bcolor,...
-% %             'Style','radiobutton');
-% %         if i == j
-% %             set(h3(i,j),'Value',1,...
-% %                 'enable','off');
-% %         else
-% %             set(h3(i,j),'enable','on','TooltipString', ...
-% %                 sprintf('from %s to %s',xY(j).name,xY(i).name));
-% %         end
-% %         if nc && i~=j
-% %             set(h3(i,j),'Value',0);
-% %         else
-% %             set(h3(i,j),'Value',1);
-% %         end
-% %     end
-% % end
-% % uicontrol(Finter,'String','done','Position', [300 100 060 020].*WS,...
-% %     'Callback', 'uiresume(gcbf)');
-% % 
-% % uiwait(Finter);
-% % 
-% % %-Get a
-% % %--------------------------------------------------------------------------
-% % for i = 1:m
-% %     for j = 1:m
-% %         a(i,j) = get(h3(i,j),'Value');
-% %     end
-% % end
-% % 
-% % delete(findobj(get(Finter,'Children'),'flat'));
-% % 
-% % %-Effects of causes (B and C matrices)
-% % %==========================================================================
-% % uicontrol(Finter,'String','done','Position', [300 100 060 020].*WS,...
-% %     'Callback', 'uiresume(gcbf)');
-% % for k = 1:nc
-% % 
-% %     %-Buttons and labels
-% %     %----------------------------------------------------------------------
-% %     str   = sprintf(...
-% %         'Effects of %-12s on regions... and connections',...
-% %         U.name{k});
-% %     spm_input(str,1,'d');
-% % 
-% %     for i = 1:m
-% %         h1(i)  = uicontrol(Finter,'String',xY(i).name,...
-% %             'Style','text',...
-% %             'BackgroundColor',bcolor,...
-% %             'FontSize',10,...
-% %             'Position',[080 350-dx*i 080 020].*WS);
-% %         h2(i)  = uicontrol(Finter,...
-% %             'Position',[160 360-dx*i 020 020].*WS,...
-% %             'BackgroundColor',bcolor,...
-% %             'Style','radiobutton');
-% %     end
-% %     for i = 1:m
-% %         for j = 1:m
-% %             if a(i,j) == 1
-% % 
-% %                 % Allow modulation of intrinsic connections
-% %                 %----------------------------------------------------------
-% %                 h3(i,j) = uicontrol(Finter,...
-% %                     'Position',[220+dx*j 360-dx*i 020 020].*WS,...
-% %                     'BackgroundColor',bcolor,...
-% %                     'Style','radiobutton');
-% %                 set(h3(i,j),'TooltipString', ...
-% %                     sprintf('from %s to %s',xY(j).name,xY(i).name));
-% % 
-% %             end
-% %         end
-% %     end
-% % 
-% %     uiwait(Finter);
-% % 
-% %     %-Get c
-% %     %----------------------------------------------------------------------
-% %     for i = 1:m
-% %         c(i,k)   = get(h2(i),'Value');
-% %     end
-% % 
-% %     %-Get b allowing any 2nd order effects
-% %     %----------------------------------------------------------------------
-% %     for i = 1:m
-% %         for j = 1:m
-% %             if a(i,j)==1
-% %                 b(i,j,k) = get(h3(i,j),'Value');
-% %             end
-% %         end
-% %     end
-% %     delete([h1(:); h2(:); h3(a==1)])
-% % 
-% % end
-% % delete(findobj(get(Finter,'Children'),'flat'));
-% % 
-% % 
-%-Effects of nonlinear modulations (D matrices)
-%==========================================================================
-% if options.nonlinear
-%     uicontrol(Finter,'String','done','Position', [300 100 060 020].*WS,...
-%         'Callback', 'uiresume(gcbf)');
-%     for k = 1:m
-% 
-%         %-Buttons and labels
-%         %------------------------------------------------------------------
-%         str = sprintf('Effects of %-12s activity on connections',xY(k).name);
-%         spm_input(str,1,'d');
-% 
-%         for i = 1:m
-%             for j = 1:m
-%                 if a(i,j)==1
-% 
-%                     % Allow modulation of intrinsic connections
-%                     %------------------------------------------------------
-%                     h4(i,j) = uicontrol(Finter,...
-%                         'Position',[220+dx*j 360-dx*i 020 020].*WS,...
-%                         'BackgroundColor',bcolor,...
-%                         'Style','radiobutton');
-%                 end
-%             end
-%         end
-% 
-%         uiwait(Finter);
 
-        %-Get d allowing any 2nd order effects
-        %------------------------------------------------------------------
-%         for i = 1:m
-%             for j = 1:m
-%                 if a(i,j)==1
-%                     d(i,j,k) = get(h4(i,j),'Value');
-%                 end
-%             end
-%         end
-%         delete(h4(a==1))
-% 
-%     end
-% end
-
-% delete(findobj(get(Finter,'Children'),'flat'));
-%spm_input('Thank you',1,'d')
-
-
-%==========================================================================
 % Response
 %==========================================================================
 
@@ -404,10 +227,36 @@ DCM.TE      = TE;
 DCM.delays  = delays;
 DCM.options = options;
 
-%-Save
-%--------------------------------------------------------------------------
-if spm_check_version('matlab','7') >= 0
-    save(fullfile(swd,['DCM_' name '.mat']),'-V6','DCM');
+% Not Implimented: If the user wants to not input the destination folder
+% for saving models, this would default to the spmmat directory
+if ~isfield(specify,'savedcm')
+    savedcm = swd;
 else
-    save(fullfile(swd,['DCM_' name '.mat']),'DCM');
+    savedcm = char(specify.savedcm);
 end
+
+
+%-Save the model
+%--------------------------------------------------------------------------
+% The if statement for the two conditions - Generate model and Select
+% matrix conditions
+if isfield(specify,'model')
+    if spm_check_version('matlab','7') >= 0
+        save(fullfile(savedcm,['DCM_' name '_' model_number '.mat']),'-V6','DCM')
+    else
+        save(fullfile(savedcm,['DCM_' name '_' model_number '.mat']),'DCM');
+    end
+else
+    if spm_check_version('matlab','7') >= 0
+        save(fullfile(savedcm,['DCM_' name '.mat']),'-V6','DCM')
+    else
+        save(fullfile(savedcm,['DCM_' name '.mat']),'DCM');
+    end
+    
+end
+
+
+
+
+
+

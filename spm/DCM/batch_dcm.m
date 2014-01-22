@@ -1,4 +1,4 @@
-function batch_dcm(varargin)
+ function batch_dcm(varargin)
 
 % ______________________________________________________________________
 % 
@@ -9,48 +9,73 @@ function batch_dcm(varargin)
 % Written by Atesh Koul, National Brain Research Center, India
 % ___________________________________________________________________________
 % 
-job = varargin{1}
+job = varargin{1};
+
 % Contrast from config file
-spmmat = job.spmmat
-% ROI title
+specify.spmmat = job.spmmat;
+
+% DCM name to be appended (DCM-name)
+specify.name = job.name;
+
+% no. of conditions
+specify.cond=job.cond;
+
 % directory for ROI
-name = job.name
-a = job.a
-job.effects
-j = numel(job.effects)
+voi = job.vois;
 
-for k = 1:j
-    b(:,:,k) = job.effects(k).b
-    c(:,k) = job.effects(k).c
-end
-job.rois(1).roi
-job.rois(2).roi
-d = job.rois.d
-roi = job.rois.roi
-RT = job.options.delays
-TE = job.options.te
-TE = TE/100
-lin = job.options.lin
-state= job.options.state
-sto = job.options.sto
-cen = job.options.cen
+% DCM options
+specify.options = job.options;
+specify.savedcm = job.savedcm;
 
-
-for p = 1:numel(roi)
-    voi{p}=char(job.rois(p).roi)
+for p = 1:numel(job.vois)
+    vol{p}=char(job.vois(p).voi);
 end
 
-m = numel(roi);
+% no. of VOIs
+m = numel(voi);
+job.model.modcreate.nROIs =m;
+specify.voi = vol;
 
-% if exist('job.rois.d')
-%    for p = 1:m
-%        d(:,:,p) = job.effects(p).d;
-%    end
-% else
-%     d = zeros(k,k,0);
-% end
+% Cannot use : if exist ('job.model.matrix') directly because of exist
+% output; check help exist for details
+if isfield (job.model,'matrix')
+    % For Select matrix option with only 1 matrix as an input  
+    matrix = char(job.model.matrix);
+    param = load(matrix);
+    specify.matrix.a = param.DCM.a; 
+    specify.matrix.b = param.DCM.b; 
+    specify.matrix.c = param.DCM.c; 
+    specify.matrix.d = param.DCM.d;
+    spm_dcm_specify_batch(specify);
+else 
+    % for generating matrix 
+    % send to DCM_model_create and get output from that program
+    % with a loop to check how many models are generated.
+    models = DCM_model_create(job.model.modcreate);
+    nmodel = size(models,2);
+    for i=1:nmodel
+        a = models(i).a; % a is a jxk matrix r8 now
+        b_cell = models(i).b; % b is a 1xn cell containing n jxk matrices r8 now
+        c = models(i).c;
+        d = models(i).d;
+        specify.matrix.a = a;
+        specify.matrix.c = c;
+        specify.matrix.d = d;
+        %% For all the modulatory connectivity matrices for this a, transfer each model to spm_dcm_specify_batch
+        s = size(b_cell,2);
+        for model_number = 1:s
+            if size(b_cell{1,model_number},2)>=1 % If matrix exists
+            b(:,:,1) = b_cell{1,model_number};
+            b(:,:,2) = b_cell{1,model_number};
+            b(:,:,3) = zeros(m);
+            specify.matrix.b = b;
+            specify.model= strcat(num2str(i),'-',num2str(model_number));
+            spm_dcm_specify_batch(specify);
+            end
+        end
     
-       spm_dcm_specify_batch(spmmat,name,voi,a,b,c,d,RT,TE,lin,state,sto,cen,j)            
-        
-               
+    
+    end
+
+
 end

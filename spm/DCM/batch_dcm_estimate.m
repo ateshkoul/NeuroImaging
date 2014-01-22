@@ -9,15 +9,17 @@ function batch_dcm_estimate(varargin)
 % Written by Atesh Koul, National Brain Research Center, India
 % ___________________________________________________________________________
 % 
-job = varargin{1}
 % checking what is the job that has been inputted; may be removed.
-DCM = job.data
+job = varargin{1};
+job.data;
+% Number of input DCM
+noDCMs = numel(job.data)
+for i = 1:noDCMs
 % for parsing the input
-DCM = char(DCM)
+DCM = job.data{i};
 % for converting into char format as the default format used is struc
-
-spm_dcm_estimate(DCM)            
+DCM = char(DCM)
 % passing the argument to the function
-        
-               
+spm_dcm_estimate(DCM);        
+end
 end
