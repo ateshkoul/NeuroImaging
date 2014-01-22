@@ -1,0 +1,14 @@
+
+README for DCM Batch:
+---------------------------
+Batch Utility for DCM analysis. The scripts can automatically generate all possible models for 
+DCM model specification and estimation. 
+
+
+Install
+---------
+To install follow either of the two ways:
+
+1. Copy all files to a folder - DCM in your spm8/toolbox folder as DCM.
+2. Make sure the folder is in the path of matlab.
+3. Launch from spm matlab batch utility.
